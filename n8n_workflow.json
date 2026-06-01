@@ -1,0 +1,128 @@
+{
+  "name": "Capstone Product Catalog Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "430f27e2-d1ef-4204-bb77-d4a1c1d0d36b",
+      "name": "When chat message received",
+      "webhookId": "f78e9354-c7d7-4078-a825-d7dbc8bfc9e5"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use this tool to fetch the live inventory catalog table containing software asset names, license prices, and unit quantities from the database.",
+        "operation": "executeQuery",
+        "query": "SELECT name, price, quantity, description FROM product",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        368,
+        208
+      ],
+      "id": "441b737f-0cb6-4326-94a4-5251f89c1960",
+      "name": "Execute a SQL query in Postgres",
+      "credentials": {
+        "postgres": {
+          "id": "2WSc7uswyYZrmRGz",
+          "name": "Sandra"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "global.amazon.nova-2-lite-v1:0",
+        "options": {
+          "maxTokensToSample": 500,
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAwsBedrock",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "1032b4e7-2eed-476c-bb43-44ec839a947d",
+      "name": "AWS Bedrock Chat Model",
+      "credentials": {
+        "aws": {
+          "id": "Tn2LWYtMmwJF77yK",
+          "name": "AWS (IAM) account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are the IP & Compliance Asset Assistant. You have access to a PostgreSQL database tool. When users ask questions about asset inventory totals, specific license prices, unit stock counts, or functional descriptions, use your database tool to query the 'product' table. Calculate answers or summarize asset utilities accurately based on the 'name', 'price', 'quantity', and 'description' columns, and respond with a friendly, professional, structured breakdown."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "dbfbc15d-f78f-4f32-8f6c-1e6372b300e1",
+      "name": "AI Agent"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query in Postgres": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AWS Bedrock Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "dceacd89-40bb-40be-8ded-8cb492e882c0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bad5f4fed246c20a00a3b781cb3d2477de005a512727d1e49d9280b36fddc982"
+  },
+  "id": "EExIpyJ2vlaWd7b1",
+  "tags": []
+}

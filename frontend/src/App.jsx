@@ -6,8 +6,9 @@ function App() {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [description, setDescription] = useState(''); // Added description state hook
   const [editingId, setEditingId] = useState(null);
-  const [editData, setEditData] = useState({ name: '', price: '', quantity: '' });
+  const [editData, setEditData] = useState({ name: '', price: '', quantity: '', description: '' }); // Added description to edit state tracker
 
   const API_URL = 'http://localhost:5000/api/products';
 
@@ -35,12 +36,18 @@ function App() {
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, price: parseFloat(price), quantity: parseInt(quantity) }),
+        body: JSON.stringify({
+          name,
+          price: parseFloat(price),
+          quantity: parseInt(quantity),
+          description: description // Added description to the creation payload
+        }),
       });
       if (response.ok) {
         setName('');
         setPrice('');
         setQuantity('');
+        setDescription(''); // Clear input text field upon successful insert
         fetchProducts();
       }
     } catch (error) {
@@ -51,7 +58,12 @@ function App() {
   // Start Inline Modification State
   const startEdit = (product) => {
     setEditingId(product.id);
-    setEditData({ name: product.name, price: product.price, quantity: product.quantity });
+    setEditData({
+      name: product.name,
+      price: product.price,
+      quantity: product.quantity,
+      description: product.description || '' // Ensure baseline fallback text exists when opening inline edit
+    });
   };
 
   // Save Inline Edit Updates to Database
@@ -64,6 +76,7 @@ function App() {
           name: editData.name,
           price: parseFloat(editData.price),
           quantity: parseInt(editData.quantity),
+          description: editData.description, // Added description payload mapping for the update route
         }),
       });
       if (response.ok) {
@@ -99,6 +112,17 @@ function App() {
               <input type="text" id="asset-name" required value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:border-sky-400 focus:ring-0 transition-colors" placeholder="e.g. Shield ADA Checker" />
             </div>
             <div>
+              <label htmlFor="asset-description" className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Asset Description</label>
+              <textarea
+                id="asset-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows="3"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:border-sky-400 focus:ring-0 transition-colors resize-none"
+                placeholder="e.g. Automated scanning tool that audits website themes for WCAG 2.1 compliance..."
+              />
+            </div>
+            <div>
               <label htmlFor="asset-price" className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">License Cost ($)</label>
               <input type="number" step="0.01" id="asset-price" required value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-slate-100 placeholder-slate-500 focus:border-sky-400 focus:ring-0 transition-colors" placeholder="0.00" />
             </div>
@@ -122,6 +146,7 @@ function App() {
                 <tr className="border-b border-slate-700 text-slate-400 text-xs font-medium uppercase tracking-wider">
                   <th scope="col" className="pb-3 pl-2">ID</th>
                   <th scope="col" className="pb-3">Product Asset Name</th>
+                  <th scope="col" className="pb-3">Description</th>
                   <th scope="col" className="pb-3">Unit License Price</th>
                   <th scope="col" className="pb-3">Units Stocked</th>
                   <th scope="col" className="pb-3 pr-2 text-right">Actions</th>
@@ -136,6 +161,19 @@ function App() {
                         <input type="text" className="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-slate-100 focus:border-sky-400 focus:ring-0" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} aria-label="Edit name" />
                       ) : (
                         product.name
+                      )}
+                    </td>
+                    <td className="py-4 text-slate-300">
+                      {editingId === product.id ? (
+                        <input
+                          type="text"
+                          className="bg-slate-900 border border-slate-600 rounded px-2 py-1 w-full text-slate-100 focus:border-sky-400 focus:ring-0"
+                          value={editData.description || ''}
+                          onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                          aria-label="Edit description"
+                        />
+                      ) : (
+                        product.description || 'No description available'
                       )}
                     </td>
                     <td className="py-4 text-slate-300">
