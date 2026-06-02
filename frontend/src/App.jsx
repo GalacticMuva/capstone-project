@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { inventoryAPI } from './api';
+import './App.css';
 import { ShieldCheck, Plus, Edit2, Check, X } from 'lucide-react';
 
 function App() {
@@ -12,19 +14,11 @@ function App() {
 
   const API_URL = 'http://localhost:5000/api/products';
 
-  // Fetch product list from your Flask backend
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json(); // Clean JavaScript object parser
-      if (response.ok) setProducts(data);
-    } catch (error) {
-      console.error('Error fetching inventory catalog:', error);
-    }
-  };
 
   useEffect(() => {
-    fetchProducts();
+    inventoryAPI.fetchProducts()
+      .then(data => setProducts(data))
+      .catch(err => console.error("Error loading cloud inventory:", err));
   }, []);
 
   // Handle Create Submit Pipeline
@@ -33,23 +27,23 @@ function App() {
     if (!name || !price || !quantity) return;
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          price: parseFloat(price),
-          quantity: parseInt(quantity),
-          description: description // Added description to the creation payload
-        }),
+      // 1. Send data directly to your environment-aware API module
+      const savedProduct = await inventoryAPI.createProduct({
+        name,
+        price: parseFloat(price),
+        quantity: parseInt(quantity),
+        description: description
       });
-      if (response.ok) {
-        setName('');
-        setPrice('');
-        setQuantity('');
-        setDescription(''); // Clear input text field upon successful insert
-        fetchProducts();
-      }
+
+      // 2. Append the newly saved database item directly to your UI state
+      setProducts([...products, savedProduct]);
+
+      // 3. Reset all your input form text fields
+      setName('');
+      setPrice('');
+      setQuantity('');
+      setDescription('');
+
     } catch (error) {
       console.error('Error inserting ledger asset:', error);
     }
@@ -62,27 +56,24 @@ function App() {
       name: product.name,
       price: product.price,
       quantity: product.quantity,
-      description: product.description || '' // Ensure baseline fallback text exists when opening inline edit
+      description: product.description || ''
     });
   };
 
   // Save Inline Edit Updates to Database
   const handleUpdate = async (id) => {
     try {
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editData.name,
-          price: parseFloat(editData.price),
-          quantity: parseInt(editData.quantity),
-          description: editData.description, // Added description payload mapping for the update route
-        }),
+    
+      const updatedProduct = await inventoryAPI.updateProduct(id, {
+        name: editData.name,
+        price: parseFloat(editData.price),
+        quantity: parseInt(editData.quantity),
+        description: editData.description
       });
-      if (response.ok) {
-        setEditingId(null);
-        fetchProducts();
-      }
+      setProducts(products.map(p => p.id === id ? updatedProduct : p));
+
+      setEditingId(null);
+
     } catch (error) {
       console.error('Error modifying asset record:', error);
     }
